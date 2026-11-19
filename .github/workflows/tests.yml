@@ -50,7 +50,26 @@ jobs:
         working-directory: app
         run: npm ci
 
+      - name: Verificar tipos (tsc)
+        working-directory: app
+        run: npm run typecheck
+
       - name: Ejecutar verificación
         working-directory: app
         run: npm run build
+
+      # Comprobación de comportamiento que NO necesita la API: el build debe
+      # producir el módulo ESM y la hoja de estilos que el portafolio importa.
+      - name: Comprobar el artefacto construido
+        working-directory: app
+        run: |
+          set -eu
+          test -s dist/app.js  || { echo "El build no generó app/dist/app.js"; exit 1; }
+          test -s dist/app.css || { echo "El build no generó app/dist/app.css"; exit 1; }
+          echo "Artefacto OK: $(wc -c < dist/app.js) bytes en app.js, $(wc -c < dist/app.css) bytes en app.css"
+
+      # Las pruebas de navegador (app/tests/e2e, script `npm run test:e2e`) NO se
+      # ejecutan aquí: necesitan la API real en el puerto 8010, el tablero servido
+      # por HTTP y Google Chrome instalado (`channel: 'chrome'`, sin descarga de
+      # navegadores). Se documentan como comprobación manual en el README.
 
