@@ -325,9 +325,16 @@ function App({ apiBase }: PropsApp) {
     }`;
   }, [concepto, grupos, conceptoId, periodo, institucionesSeleccionadas]);
 
+  const portalCatalogo = (estado: 'loading' | 'error' | 'empty') => hostHallazgos ? createPortal(
+    <div data-state={estado} role={estado === 'error' ? 'alert' : 'status'} aria-busy={estado === 'loading'}>
+      <p>{estado === 'error' ? 'No se pudieron calcular los hallazgos. El servicio no está disponible.' : estado === 'empty' ? 'No hay datos publicados para calcular hallazgos.' : 'Consultando los datos para calcular hallazgos…'}</p>
+      {estado === 'error' ? <button type="button" onClick={() => { void catalogoQuery.refetch(); }}>Reintentar</button> : null}
+    </div>, hostHallazgos) : null;
+
   if (catalogoQuery.isError) {
     return (
       <div className="bm-app">
+        {portalCatalogo(catalogoQuery.isFetching ? 'loading' : 'error')}
         <div className="bm-banner bm-banner--error" role="alert">
           <p className="bm-banner-title">No se pudo cargar el catálogo de la CNBV</p>
           <p>
@@ -342,9 +349,14 @@ function App({ apiBase }: PropsApp) {
     );
   }
 
+  if (catalogo && (!catalogo.periodos.length || !catalogo.conceptos.length)) {
+    return <div className="bm-app">{portalCatalogo('empty')}<p role="status">No hay datos publicados en este catálogo.</p></div>;
+  }
+
   if (!catalogo || !periodo || !conceptoId) {
     return (
       <div className="bm-app">
+        {portalCatalogo('loading')}
         <div className="bm-skeleton bm-skeleton--head" />
         <div className="bm-skeleton bm-skeleton--kpis" />
         <div className="bm-grid">
@@ -422,6 +434,8 @@ function App({ apiBase }: PropsApp) {
               invitacion={resultadoHallazgos.invitacion}
               avisoVigencia={avisoVigencia}
               actualizando={actualizando}
+              error={resumenQuery.isError || seriesQuery.isError || indicadoresQuery.isError || detalleQuery.isError}
+              onReintentar={() => { void resumenQuery.refetch(); void seriesQuery.refetch(); void indicadoresQuery.refetch(); void detalleQuery.refetch(); }}
               onVerEnGrafico={enfocarPanel}
               onAbrirFuentes={() => setFuentesAbierto(true)}
               variante="ficha"
@@ -435,6 +449,8 @@ function App({ apiBase }: PropsApp) {
               invitacion={resultadoHallazgos.invitacion}
               avisoVigencia={avisoVigencia}
               actualizando={actualizando}
+              error={resumenQuery.isError || seriesQuery.isError || indicadoresQuery.isError || detalleQuery.isError}
+              onReintentar={() => { void resumenQuery.refetch(); void seriesQuery.refetch(); void indicadoresQuery.refetch(); void detalleQuery.refetch(); }}
               onVerEnGrafico={enfocarPanel}
               onAbrirFuentes={() => setFuentesAbierto(true)}
             />

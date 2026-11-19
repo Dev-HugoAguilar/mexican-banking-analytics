@@ -22,6 +22,8 @@ export interface PropsHallazgos {
   invitacion: string | null;
   avisoVigencia: string | null;
   actualizando: boolean;
+  error?: boolean;
+  onReintentar?: () => void;
   onVerEnGrafico: (panel: PanelDestino) => void;
   onAbrirFuentes: () => void;
   /** `ficha` = párrafos dentro de la cuadrícula descriptiva. */
@@ -41,6 +43,8 @@ export function Hallazgos({
   invitacion,
   avisoVigencia,
   actualizando,
+  error = false,
+  onReintentar,
   onVerEnGrafico,
   onAbrirFuentes,
   variante = 'panel',
@@ -49,11 +53,23 @@ export function Hallazgos({
     actualizando ? ' is-updating' : ''
   }`;
 
+  if (error && !actualizando) {
+    return <div data-state="error" role="alert"><p>No se pudieron calcular los hallazgos de la CNBV. El servicio no está disponible.</p>
+      <button type="button" className="bm-link" onClick={onReintentar}>Reintentar</button></div>;
+  }
+  if (actualizando) {
+    return <p data-state="loading" role="status" aria-busy="true">Calculando hallazgos con los filtros activos…</p>;
+  }
+  if (!hallazgos.length) {
+    return <p data-state="empty" role="status">No hay datos suficientes con los filtros actuales para calcular hallazgos.</p>;
+  }
+
   /* Variante de ficha: párrafos corridos, con cifra, conclusión y contexto. */
   if (variante === 'ficha') {
     return (
       <section
-        className={base}
+        data-state="ready"
+      className={base}
         aria-label="Hallazgos del análisis"
         aria-busy={avisoVigencia ? true : undefined}
         data-testid="hallazgos"
@@ -92,6 +108,7 @@ export function Hallazgos({
 
   return (
     <section
+      data-state="ready"
       className={base}
       aria-labelledby="bm-t-hallazgos"
       aria-busy={avisoVigencia ? true : undefined}
